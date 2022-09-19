@@ -1,0 +1,306 @@
+---
+title: "Étude satisfaction à l'hôpital"
+author: "Josselin Araujo"
+date: "18 septembre 2022"
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document: default
+---
+
+Cette étude évalue la qualité de relation avec le personnel soignant et la quantité d'informations reçue par des patients lors d'un séjour à l'hôpital. 534 patients ont été recrutés sur plusieurs hôpitaux de la région parisienne.
+
+Nous allons travailler sur le jeu de données `satisfaction_hopital.csv` regroupant les 534 patients.
+
+Contenu du fichier :
+
+- service : *service ayant accueilli le patient allant de 1 à 8*
+- sexe : *sexe du patient (0 homme, 1 fille)*
+- age : *âge du patient en années*
+- profession :
+  - 1 : *agriculteur exploitant*
+  - 2 : *artisant, commerçant, chef d'entreprise*
+  - 3 : *cadre, profession intellectuelle ou artistique, profession libérale*
+  - 4 : *profession de l'enseignement, de la santé, du travail social ou de la fonction publique*
+  - 5 : *employé*
+  - 6 : *ouvirer*
+  - 7 : *étudiant, militaire, chômeur sans avoir jamais travaillé*
+  - 8 : *autre*
+- amelioration.sante : *impression d'amélioration de la santé du fait du séjour à l'hôpital (codé de 0 : aggravé, à 3 : nettement amélioré)*
+- amelioration.moral : *impression d'amélioration du moral du fait du séjour à l'hôpital (codé de 0 : aggravé, à 3 : nettement amélioré)*
+- recommander : *recommander le service à son entourage (codé 0: non, 1 : oui, probablement, 2 : oui sûrement)*
+- score.information : *score relatif à la qualité de l'information reçue pendant le séjour (score variant de 10 à 40)*
+- score.relatif: *score relatif à la qualité des relations avec le personnel soignant pendant le séjour (score variant de 10 à 40)*
+
+
+```{r "setup", include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/Users/josselin/Desktop/ING4/Mooc Intro statistique avec R/Semaine 1/LAB1")
+```
+Importation des données :
+
+```{r}
+smp <- read.csv2("/Users/josselin/Desktop/ING4/Mooc Intro statistique avec R/Semaine 1/satisfaction_hopital.csv")
+```
+Affichage de l'ensemble des variables :
+```{r}
+names(smp)
+```
+
+Affichage des 10 premières observations de chaque variable :
+```{r}
+str(smp)
+```
+# Présentation des pourcentages des sujets pour des variables catégorielles du fichier
+
+Étudions trois variables catégorielles du fichier : *sexe, profession, service*
+```{r}
+smp$profession.c <-factor(smp$profession,
+                          labels = c("agriculteur","artisan","cadre","intermédiaire","employé",
+                                      "ouvrier", "sans emploi","autre"))
+
+smp$sexe.c <- factor(smp$sexe, labels = c("homme","femme"))
+
+smp$service.c <-factor(smp$service)
+```
+## Pour les professions :
+
+Affichons le nombre de personnes pour chaque profession parmi tous les patients :
+```{r}
+table(smp$profession.c)
+```
+Affichons les effectifs pour chaque profession :
+```{r}
+tabProf<-prop.table(table(smp$profession.c))
+round(tabProf*100,2)
+```
+Visualisations les effectifs pour chaque profession :
+
+Nous apercevons que les cadres sont les plus représentés parmi les patients.
+```{r}
+barplot(tabProf*100,
+        ylab = "proportion",
+        ylim = c(0,30),las=2,
+        border ="blue",
+        col="pink",
+        main="proportion des professions exercées par les patients"
+)
+```
+```{r}
+pie(table(smp$profession.c),
+    main="proportion des professions exercées par les patients"
+)
+```
+
+## Pour les services :
+```{r}
+table(smp$service)
+```
+```{r}
+tabService<-prop.table(table(smp$service.c))
+round(tabService*100,2)
+```
+```{r}
+barplot(tabService*100,
+        ylab = "proportion",
+        ylim = c(0,30),
+        xlab = "numéro du service",
+        las=2,
+        main="proportion du nombre de patients accueilli par chaque service ",
+        border ="blue",
+        col="pink"
+)
+```
+
+Nous apercevons que les patients sont plutôt bien repartis équitablement au sein des services de l'hôpital.
+
+## Pour le sexe :
+
+```{r}
+table(smp$sexe.c)
+```
+```{r}
+tabSexe<-prop.table(table(smp$sexe.c))
+round(tabSexe*100,2)
+```
+```{r}
+barplot(tabSexe*100,ylab = "proportion",
+        ylim = c(0,60),
+        las=2,
+        border ="blue",
+        main="proportion d'hommes et de femmes parmi les patients",
+        col="pink"
+)
+```
+
+# Présentation de la moyenne, médiane, écart-type, minimum, maximum des autres variables
+
+
+Pour l'âge, `summary()` nous offre un résumé de la distribution de cette variable :
+
+```{r}
+summary(smp$age)
+```
+Visualisation de la distribution de la variable âge :
+
+On remarque que la moitié des patients ont entre 45 et 72 ans, les patients ont donc majoritairement un âge avancé.
+```{r}
+boxplot(smp$age,
+        ylab="âge",
+        main="distribution de l'âge des patients",
+        border ="blue",
+        col="pink"
+)
+```
+Autre méthode :
+```{r}
+require(prettyR)
+describe(smp[,c(3,5,6,7,8,9)],num.desc = c("mean","median","sd","min","max","valid.n"))
+```
+# Relations avec les patients
+
+## Distribution du score relatif à la qualité de la relation avec le personnel soignant pendant le séjour du patient
+
+```{r}
+table(smp$score.relation)
+```
+```{r}
+hist(smp$score.relation,
+     main = "Historigramme de la variable score.relation",
+     xlab = "score.relation",
+     ylab = "nombre de sujets",
+     border ="blue",
+     col="pink"
+)
+```
+```{r}
+summary(smp$score.relation)
+```
+```{r}
+boxplot(smp$score.relation,
+        ylab = "score qualité relations avec le personnel",
+        main="distribution du score qualité relations",
+        border ="blue",
+        col="pink"
+
+)
+```
+
+
+Nous pouvons donc constater que les patients sont en très grande majorité satisfaits de la qualité de la relation avec le personnel soignant pendant leur séjour à l'hôpital.
+
+## Distribution du score relatif à la qualité de la relation avec le personnel soignant pendant le séjour à l’hôpital du patient en fonction du sexe.
+
+```{r}
+table(smp$score.relation[which(smp$sexe.c=="homme")])
+table(smp$score.relation[which(smp$sexe.c=="femme")])
+```
+
+```{r}
+summary(smp$score.relation[which(smp$sexe.c=="homme")])
+summary(smp$score.relation[which(smp$sexe.c=="femme")])
+```
+```{r}
+boxplot(smp$score.relation~smp$sexe.c,
+        ylim=c(0,50),
+        xlab = "sexe",
+        ylab="score qualité relations avec le personnel",
+        main="distribution du score qualité relations en fonction du sexe",
+        border ="blue",
+        col="pink" )
+```
+Nous pouvons donc constater que les hommes sont globalement autant satisfaits que les femmes sur la qualité de la relation personnel soignant pendant leur séjour à l'hôpital.
+
+## Distribution du score relatif à la qualité de la relation avec le personnel soignant pendant le séjour à l’hôpital du patient en fonction de l'âge.
+
+Découpons en 5 intervalles d'âges : les moins de 20 ans, les patients entre 20 et moins de 40 ans, ceux entre 40 et moins de 60 ans, puis ceux entre 60 et moins de 80 ans et enfin les personnes de plus de 80 ans.
+
+```{r}
+smp$age.cat<-factor(smp$age)
+table(smp$age.cat)
+```
+
+```{r}
+table(smp$age.cat)[0:2]
+levels(smp$age.cat)[0:2]<-"-20"
+table(smp$age.cat)
+```
+
+```{r}
+table(smp$age.cat)[2:20]
+levels(smp$age.cat)[2:20]<-"20 et 40-"
+table(smp$age.cat)
+```
+```{r}
+table(smp$age.cat)[3:22]
+levels(smp$age.cat)[3:22]<-"40 et 60-"
+table(smp$age.cat)
+```
+
+```{r}
+table(smp$age.cat)[4:23]
+levels(smp$age.cat)[4:23]<-"60 et 80-"
+table(smp$age.cat)
+```
+
+
+
+
+```{r}
+table(smp$age.cat)[5:20]
+levels(smp$age.cat)[5:20]<-"80+"
+table(smp$age.cat)
+```
+
+Nous venons donc de découper en 5 intervalles afin de visualiser plus facilement la variation du score relatif à la qualité de la relation avec le personnel soignant pendant le séjour à l’hôpital du patient en fonction de l'âge.
+
+```{r}
+summary(smp$score.relation[which(smp$age.cat=="-20")])
+summary(smp$score.relation[which(smp$age.cat=="20 et 40-")])
+```
+
+Visualisons ces informations à l'aide du graphique suivant :
+
+```{r}
+boxplot(smp$score.relation~smp$age.cat,
+        ylim=c(0,50),
+        xlab = "âge",
+        ylab="score qualité relations avec le personnel",
+        border ="blue",
+        col="pink",
+        main="distribution du score qualité relations en fonction de l'âge"
+         )
+```
+
+```{r}
+plot(jitter(smp$score.relation),
+     jitter(smp$age),
+     xlab = "score qualité relations avec le personnel soignant",
+     main="distribution du score qualité relations en fonction de l'âge",
+     ylab = "âge",
+     col="purple",
+)
+```
+
+Nous pouvons donc dire que les patients de plus 20 ans sont en général plus satisfaits de la qualité de la relation avec le personnel soignant que les patients de moins de 20 ans.
+
+# Distribution du score relatif à la qualité de l'information reçue pendant le séjour en fonction de la profession du patient
+```{r}
+
+boxplot(smp$score.information~smp$profession.c,
+        ylim=c(0,50),
+        xlab = " ",
+        ylab="score qualité de l'information reçue",
+        border ="blue",
+        col="pink",
+        main="score qualité de l'information reçue en fonction de la profession",
+        las=2,
+         )
+
+```
+Nous pouvons donc constater que globalement les patients exerçants des professions différentes sont globalement plutôt tous autant satisfaits sur la qualité l'information reçue pendant le séjour à l'hôpital.
+
+
+# Conclusion
+
+Lors de cette étude avons pu analyser différentes variables issus du jeu de données. Nous avons pu extraire des informations en étudiant plusieurs variables comme la profession, le sexe, l'âge des patients. Nous avons également pu voir les liens entre différentes variables, comme la variation du score de la qualité des relations en fonction du sexe ou de l'âge ou encore la variation du score de la qualité de l'information reçue par les patients en fonction de la profession.
